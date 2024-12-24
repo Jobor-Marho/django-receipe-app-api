@@ -5,7 +5,7 @@ on: [push]
 
 jobs:
   test-lint:
-    name: Test and Lint
+    name: Test and Lints
     runs-on: ubuntu-latest
 
     steps:
@@ -17,7 +17,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
 
       - name: Test
         run: docker-compose run --rm app sh -c "python manage.py test"
