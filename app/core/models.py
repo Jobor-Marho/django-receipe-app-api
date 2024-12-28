@@ -1,5 +1,5 @@
 """database models"""
-
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager, PermissionsMixin)
 
@@ -38,3 +38,19 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
+
+
+class Receipe(models.Model):
+    """Model for receipe"""
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    price = models.DecimalField(decimal_places=2, default=0.00,max_digits=5)
+    time_minutes = models.IntegerField()
+    link = models.CharField(max_length=255, blank=True)
+    user = models.ForeignKey(
+                            settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE
+                             )
+
+    def __str__(self):
+        return self.title
