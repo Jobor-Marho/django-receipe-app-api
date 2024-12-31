@@ -10,7 +10,7 @@ app_name = 'receipe'
 
 router = DefaultRouter()
 router.register('receipes', views.ReceipeViewSet)
-router.register('receipe-tags', views.TagViewSet)
+router.register('receipe-tags', views.TagViewSet, basename='tag')
 
 
 urlpatterns = [
