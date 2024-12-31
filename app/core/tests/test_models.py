@@ -7,6 +7,9 @@ from django.contrib.auth import get_user_model
 from decimal import Decimal
 from core import models
 
+def create_user(**params):
+    """Create and return a valid user instance"""
+    return get_user_model().objects.create_user(**params)
 
 class ModelTests(TestCase):
     """ Test Models"""
@@ -60,6 +63,15 @@ class ModelTests(TestCase):
             description='sample descrip'
         )
         self.assertEqual(str(receipe), receipe.title)
+
+    def test_create_tag(self):
+        """Test create a tag is succeful"""
+        user = create_user(email='new@exmaple.com', password='12345')
+        tag = models.Tags.objects.create(user=user, name='Tag 1')
+        self.assertEqual(str(tag), tag.name)
+
+    
+
 
 
 

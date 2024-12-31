@@ -44,13 +44,22 @@ class Receipe(models.Model):
     """Model for receipe"""
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    price = models.DecimalField(decimal_places=2, default=0.00,max_digits=5)
+    price = models.DecimalField(decimal_places=2, default=0.00, max_digits=5)
     time_minutes = models.IntegerField()
     link = models.CharField(max_length=255, blank=True)
     user = models.ForeignKey(
                             settings.AUTH_USER_MODEL,
                              on_delete=models.CASCADE
                              )
+    tags = models.ManyToManyField('Tags')
 
     def __str__(self):
         return self.title
+
+class Tags(models.Model):
+    """Tags for filtering receipes"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255, null=False)
+
+    def __str__(self):
+        return self.name
