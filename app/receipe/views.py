@@ -35,10 +35,7 @@ class ReceipeViewSet(viewsets.ModelViewSet):
         """Create a new Receipe"""
         serializer.save(user=self.request.user)
 
-    def perform_update(self, serializer):
-        # Prevent changing the user field by explicitly setting it to the original value
-        user = self.get_object().user  # Keep the current user
-        serializer.save(user=user)  # Save the recipe with the same user
+
 
     def list(self, request, *args, **kwargs):
         """List for all receipes"""
@@ -71,7 +68,7 @@ class TagViewSet(mixins.DestroyModelMixin,
         """List for all tags"""
         queryset = self.get_queryset()
         if not queryset.exists():
-            return Response({'detail': 'No recipes found.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'detail': 'No tags found.'}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 

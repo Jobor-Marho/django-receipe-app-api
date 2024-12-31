@@ -242,3 +242,43 @@ class PrivateReceipeAPITests(TestCase):
                 user=self.user,
             ).exists()
             self.assertTrue(exists)
+
+
+    def test_create_tags_on_update(self):
+        """Test updating a receipe with an existing or new tags"""
+        receipe = create_receipe(self.user)
+        payload = {"tags": [{"name": "lunch"}]}
+        url = detail_url(receipe.id)
+        res = self.client.patch(url, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        new_tag = Tags.objects.get(user=self.user, name="lunch")
+        self.assertIn(new_tag, receipe.tags.all())
+
+    def test_update_receipe_assign_tags(self):
+        """Test assinging an existing tag when updating receipe"""
+        tag_breakfast = Tags.objects.create(user=self.user, name="Breakfast")
+        receipe = create_receipe(self.user)
+        receipe.tags.add(tag_breakfast)
+
+        tag_lunch = Tags.objects.create(user=self.user, name="Lunch")
+        payload = {
+            "tags": [{"name": "Lunch"}]
+        }
+
+        url = detail_url(receipe.id)
+        res = self.client.patch(url, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn(tag_lunch, receipe.tags.all())
+        self.assertNotIn(tag_breakfast, receipe.tags.all())
+
+    def test_clear_receipe_tags(self):
+        """Test clearing tags for a receipe"""
+        tag = Tags.objects.create(user=self.user, name='New tag')
+        receipe = create_receipe(self.user)
+        payload = {"tags": []}
+        url = detail_url(receipe.id)
+        res = self.client.patch(url, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(receipe.tags.count(), 0)
+
