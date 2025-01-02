@@ -9,10 +9,11 @@ app_name = 'receipe'
 
 
 router = DefaultRouter()
-router.register('receipes', views.ReceipeViewSet)
-router.register('receipe-tags', views.TagViewSet, basename='tag')
+router.register("receipes", views.ReceipeViewSet)
+router.register("receipe-tags", views.TagViewSet, basename='tag')
+router.register("receipe-ingredients", views.IngredientsViewSet)
 
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path("", include(router.urls)),
 ]

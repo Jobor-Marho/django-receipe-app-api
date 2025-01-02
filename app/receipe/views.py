@@ -7,7 +7,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from core.models import Receipe, Tags
+from core.models import Receipe, Tags, Ingredient
 from receipe import serializers
 
 class ReceipeViewSet(viewsets.ModelViewSet):
@@ -42,34 +42,39 @@ class ReceipeViewSet(viewsets.ModelViewSet):
 
         queryset = self.get_queryset()
         if not queryset.exists():
-            return Response({'detail': 'No recipes found.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'detail': 'No recipe found.'}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-
-
-class TagViewSet(mixins.DestroyModelMixin,
+class BaseReceipeAttrViewSet(mixins.DestroyModelMixin,
                  mixins.UpdateModelMixin,
                  mixins.ListModelMixin,
                  viewsets.GenericViewSet):
+    """Base ViewSet for Receipe attributes"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        f"""Get {self.queryset.model.__name__.lower()}s for authenticated user """
+        return self.queryset.filter(user=self.request.user).order_by('-name')
+
+    def list(self, request, *args, **kwargs):
+        f"""List for all {self.queryset.model.__name__.lower()}s"""
+        queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response({'detail': f'No {self.queryset.model.__name__.lower()} found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class TagViewSet(BaseReceipeAttrViewSet):
     """View for managing Tags"""
 
     serializer_class = serializers.TagSerializer
     queryset = Tags.objects.all()
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
 
 
-    def get_queryset(self):
-        """Get tags for authenticated user """
-        return self.queryset.filter(user=self.request.user).order_by('-name')
-
-    def list(self, request, *args, **kwargs):
-        """List for all tags"""
-        queryset = self.get_queryset()
-        if not queryset.exists():
-            return Response({'detail': 'No tags found.'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
+class IngredientsViewSet(BaseReceipeAttrViewSet):
+    """Manage Ingredients in the Database"""
+    serializer_class = serializers.IngredientSerializer
+    queryset = Ingredient.objects.all()
 

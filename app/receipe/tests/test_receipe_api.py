@@ -5,7 +5,7 @@ Test for Receipe APIs
 from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from core.models import Receipe, Tags
+from core.models import Receipe, Tags, Ingredient
 from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -282,3 +282,89 @@ class PrivateReceipeAPITests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(receipe.tags.count(), 0)
 
+    def test_create_receipe_with_new_ingredient(self):
+        """Test create a new receipe with ingredient"""
+        payload = {
+            "title": "New Receipe",
+            "time_minutes": 34,
+            "price": Decimal(67.53),
+            "ingredients": [{"name": "newIngredient"}, {"name": "newingredient2"}]
+        }
+
+        res = self.client.post(RECEIPES_URL, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        receipes =  Receipe.objects.filter(user=self.user)
+        self.assertEqual(receipes.count(), 1)
+        receipe = receipes[0]
+        self.assertEqual(receipe.ingredients.count(), 2)
+        for ingredients in payload['ingredients']:
+            exists = receipe.ingredients.filter(
+                name=ingredients["name"],
+                user=self.user).exists()
+            self.assertTrue(exists)
+
+    def test_create_receipe_with_existing_ingredient(self):
+        """test creating receipe with existing ingredients"""
+        ingredient = Ingredient.objects.create(user=self.user, name="Ingredient")
+        payload = {
+            "title": "New receipe",
+            "time_minutes": 56,
+            "price": Decimal(9.77),
+            "ingredients": [{"name": "Ingredient"}, {"name": "newIngredient"}]
+        }
+
+        res = self.client.post(RECEIPES_URL, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        receipes = Receipe.objects.filter(user=self.user)
+        self.assertEqual(receipes.count(), 1)
+        receipe = receipes[0]
+        self.assertEqual(receipe.ingredients.count(), 2)
+        self.assertIn(ingredient, receipe.ingredients.all())
+        for ingredient in payload["ingredients"]:
+            exists = receipe.ingredients.filter(
+                name=ingredient['name'],
+                user=self.user).exists()
+            self.assertTrue(exists)
+
+    def test_create_ingredients_on_update(self):
+        """Test creating a new no existent ingredient on update"""
+        receipe = create_receipe(self.user)
+        payload = {"ingredients": [{"name": "lemon"}]}
+
+        url = detail_url(receipe.id)
+        res = self.client.patch(url, payload, format="json")
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        new_ingr = Ingredient.objects.get(name="lemon", user=self.user)
+        self.assertIn(new_ingr, receipe.ingredients.all())
+
+    def test_update_receipe_assign_ingredients(self):
+        """Test assigning an existing ingredients when updating a receipe"""
+        ingr1 = Ingredient.objects.create(name="ingr1", user=self.user)
+        receipe = create_receipe(self.user)
+        receipe.ingredients.add(ingr1)
+
+        ingr2 = Ingredient.objects.create(name="ingr2", user=self.user)
+
+        payload = {"ingredients": [{"name": "ingr2"}]}
+
+        url = detail_url(receipe.id)
+        res = self.client.patch(url, payload, format="json")
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn(ingr2, receipe.ingredients.all())
+        self.assertNotIn(ingr1, receipe.ingredients.all())
+
+    def test_clear_receipe_ingredients(self):
+        """Test clearing a receipe ingredients"""
+        ingredient = Ingredient.objects.create(user=self.user, name="chili")
+        receipe = create_receipe(self.user)
+
+        receipe.ingredients.add(ingredient)
+
+        payload = {"ingredients": []}
+        url = detail_url(receipe.id)
+
+        res = self.client.patch(url, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(receipe.ingredients.count(), 0)
