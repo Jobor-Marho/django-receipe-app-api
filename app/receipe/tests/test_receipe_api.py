@@ -1,6 +1,9 @@
 """
 Test for Receipe APIs
 """
+import tempfile
+import os
+from PIL import Image
 
 from decimal import Decimal
 from django.contrib.auth import get_user_model
@@ -16,6 +19,10 @@ RECEIPES_URL = reverse('receipe:receipe-list')
 def detail_url(receipe_id):
     """Create and return a receipe detail url"""
     return reverse('receipe:receipe-detail', args=[receipe_id])
+
+def image_upload_url(receipe_id):
+    """Create and return an  image upload URL"""
+    return reverse("receipe:receipe-upload-image", args=[receipe_id])
 
 def create_receipe(user, **params):
     """Create and return a sample receipe"""
@@ -368,3 +375,59 @@ class PrivateReceipeAPITests(TestCase):
         res = self.client.patch(url, payload, format="json")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(receipe.ingredients.count(), 0)
+
+
+def create_receipe(user, **params):
+    """Create and return a sample receipe"""
+    defaults = {
+        'title': 'sample title',
+        'time_minutes': 22,
+        'price': Decimal(5.25),
+        'description': 'test description',
+        'link': 'https://testexample.com'
+    }
+    defaults.update(params)
+
+    receipe = Receipe.objects.create(user=user, **defaults)
+    return receipe
+
+def create_user(**params):
+    """Create and return a new user"""
+    return get_user_model().objects.create_user(**params)
+class ImageUploadTests(TestCase):
+    """Test for the image upload API"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = create_user(email='user2@gmail.com', password='775444')
+        self.client.force_authenticate(self.user)
+        self.receipe = create_receipe(self.user)
+
+    def tearDown(self):
+        self.receipe.image.delete()
+
+    def test_upload_image(self):
+        """Test uploading an image to a receipe"""
+        url = image_upload_url(self.receipe.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as image_file:
+            img = Image.new("RGB", (10, 10))
+            img.save(image_file, format="JPEG")
+            image_file.seek(0)
+            payload = {"image": image_file}
+
+            res = self.client.post(url, payload, format="multipart")
+        
+        self.receipe.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("image", res.data)
+        self.assertTrue(os.path.exists(self.receipe.image.path))
+
+    def test_upload_image_bad_request(self):
+        """Test uploading invalid image"""
+        url = image_upload_url(self.receipe.id)
+        payload = {"image": "noimage"}
+
+        res = self.client.post(url, payload, format="multipart")
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+

@@ -77,8 +77,15 @@ class ReceipeDetailSerializer(ReceipeSerializer):
     """Serializer for receipe detail view"""
 
     class Meta(ReceipeSerializer.Meta):
-        fields = ReceipeSerializer.Meta.fields + ['description']
+        fields = ReceipeSerializer.Meta.fields + ['description', 'image']
 
+class ReceipeImageSerializer(serializers.ModelSerializer):
+    """Serializer for uploading images"""
 
+    class Meta:
+        model = Receipe
+        fields = ["id", "image"]
+        read_only_field = ["id"]
+        extra_kwargs = {"image": {"required": "True"}}
 
 

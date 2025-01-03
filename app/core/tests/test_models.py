@@ -2,7 +2,8 @@
 Test for models
 """
 
-from django.test import TestCase
+from django.test import TestCase #for making tests involving the database (alias of it)
+from unittest.mock import patch #for testing image uploading mechanism
 from django.contrib.auth import get_user_model
 from decimal import Decimal
 from core import models
@@ -76,6 +77,15 @@ class ModelTests(TestCase):
         """Test creating a new Ingredients"""
         ingredient = models.Ingredient.objects.create(name="new ingredient", user=get_user_model().objects.create_user(email="testuser@example.com", password="123456"))
         self.assertEqual(str(ingredient), ingredient.name)
+
+    @patch('core.models.uuid.uuid4')
+    def test_receipe_file_name_uuid(self, patched_mock_uuid):
+        """Test generating image path"""
+        uuid = 'test_uuid'
+        patched_mock_uuid.return_value = uuid
+        file_path = models.receipe_image_file_path(None, 'example.jpg')
+
+        self.assertEqual(file_path, f'uploads/receipe/{uuid}.jpg')
 
 
 
