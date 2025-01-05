@@ -1,6 +1,7 @@
 """
 Test for ingredients API
 """
+from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.test import TestCase
@@ -9,7 +10,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from receipe.serializers import IngredientSerializer
-from core.models import Ingredient
+from core.models import Ingredient, Receipe
 
 
 INGREDIENTS_URL = reverse("receipe:ingredient-list")
@@ -111,3 +112,44 @@ class PrivateIngredientAPITest(TestCase):
 
         ingredient_exists = Ingredient.objects.filter(id=ingredient.id).exists()
         self.assertFalse(ingredient_exists)
+
+    def test_filter_ingredients_assigned_to_receipe(self):
+        """Test listing ingredients assigned to receipe"""
+        payload = {"name": "peper", "user": self.user}
+        ingredient1 = create_ingredients(**payload)
+        payload = {"name": "onion", "user": self.user}
+        ingredient2 = create_ingredients(**payload)
+        receipe = Receipe.objects.create(title="Porridge",
+                                         time_minutes=12,
+                                         price=Decimal(4.56),
+                                         user=self.user)
+        receipe.ingredients.add(ingredient1)
+
+        res = self.client.get(INGREDIENTS_URL, {"assigned_only": 1})
+        
+        s1 = IngredientSerializer(ingredient1)
+        s2 = IngredientSerializer(ingredient2)
+        self.assertIn(s1.data, res.data)
+        self.assertNotIn(s2.data, res.data)
+
+    def test_filtered_ingredients_unique(self):
+        """Test filtered ingredients return a unique list"""
+        payload = {"name": "peper", "user": self.user}
+        ingredient1 = create_ingredients(**payload)
+        payload = {"name": "brocolli", "user": self.user}
+        create_ingredients(**payload)
+
+        r1 = Receipe.objects.create(title="eggs",
+                                    time_minutes=23,
+                                    price=Decimal(34.44),
+                                    user=self.user)
+        r2 = Receipe.objects.create(title="Herb eggs",
+                                    time_minutes=23,
+                                    price=Decimal(34.44),
+                                    user=self.user)
+        r1.ingredients.add(ingredient1)
+        r2.ingredients.add(ingredient1)
+
+        res = self.client.get(INGREDIENTS_URL, {"assigned_only": 1})
+
+        self.assertEqual(len(res.data), 1)

@@ -377,23 +377,69 @@ class PrivateReceipeAPITests(TestCase):
         self.assertEqual(receipe.ingredients.count(), 0)
 
 
-def create_receipe(user, **params):
-    """Create and return a sample receipe"""
-    defaults = {
-        'title': 'sample title',
-        'time_minutes': 22,
-        'price': Decimal(5.25),
-        'description': 'test description',
-        'link': 'https://testexample.com'
-    }
-    defaults.update(params)
+    def test_filter_by_tags(self):
+        """Test filtering receipe by tags"""
+        r1 = Receipe.objects.create(user=self.user, title="Poriddge", time_minutes= 43, price= Decimal(45))
 
-    receipe = Receipe.objects.create(user=user, **defaults)
-    return receipe
+        r2 = Receipe.objects.create(user=self.user, title="Salad",time_minutes=10, price= Decimal(12))
 
-def create_user(**params):
-    """Create and return a new user"""
-    return get_user_model().objects.create_user(**params)
+        tag1 = Tags.objects.create(name="Porridge", user=self.user)
+        tag2 = Tags.objects.create(name="Salad", user=self.user)
+
+        r1.tags.add(tag1)
+        r2.tags.add(tag2)
+        r3 = create_receipe(self.user)
+
+        params = {"tags": f"{tag1.id}, {tag2.id}"}
+        res = self.client.get(RECEIPES_URL, params)
+
+        s1 = ReceipeSerializer(r1)
+        s2 = ReceipeSerializer(r2)
+        s3 = ReceipeSerializer(r3)
+
+        self.assertIn(s1.data, res.data)
+        self.assertIn(s2.data, res.data)
+        self.assertNotIn(s3.data, res.data)
+
+    def test_filter_by_ingredients(self):
+        """Test filtering by ingredients"""
+        params = {
+            "title": "Poridge",
+            "time_minutes": 43,
+            "price": Decimal(45),
+        }
+
+        # Create the recipe with the given parameters
+        r1 = create_receipe(user=self.user, **params)
+
+        params = {
+            "title": "Poridge",
+            "time_minutes": 43,
+            "price": Decimal(45),
+        }
+
+        r2 = create_receipe(user=self.user, **params)
+
+        ingre1 = Ingredient.objects.create(name="Peper", user=self.user)
+        ingre2 = Ingredient.objects.create(name="Cabbage", user=self.user)
+
+        r1.ingredients.add(ingre1)
+        r2.ingredients.add(ingre2)
+        r3 = create_receipe(self.user)
+
+        params = {"ingredients": f"{ingre1.id},{ingre2.id}"}
+
+        res = self.client.get(RECEIPES_URL, params)
+
+        s1 = ReceipeSerializer(r1)
+        s2 = ReceipeSerializer(r2)
+        s3 = ReceipeSerializer(r3)
+
+        self.assertIn(s1.data, res.data)
+        self.assertIn(s2.data, res.data)
+        self.assertNotIn(s3.data, res.data)
+
+
 class ImageUploadTests(TestCase):
     """Test for the image upload API"""
 
@@ -416,7 +462,7 @@ class ImageUploadTests(TestCase):
             payload = {"image": image_file}
 
             res = self.client.post(url, payload, format="multipart")
-        
+
         self.receipe.refresh_from_db()
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn("image", res.data)
