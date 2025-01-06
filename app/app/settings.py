@@ -135,11 +135,12 @@ USE_TZ = True
 
 # Static and media settings for getting static files from our docker volume
 
-STATIC_URL = '/static/static/'
-MEDIA_URL = 'static/media/'
+STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
 
 MEDIA_ROOT = '/vol/web/media'
-STATIC_ROOT = 'vol/web/static'
+STATIC_ROOT = '/vol/web/static'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
