@@ -135,7 +135,7 @@ USE_TZ = True
 
 # Static and media settings for getting static files from our docker volume
 
-STATIC_URL = '/static//static/'
+STATIC_URL = '/static/static/'
 MEDIA_URL = '/static/media/'
 
 MEDIA_ROOT = '/vol/web/media'
