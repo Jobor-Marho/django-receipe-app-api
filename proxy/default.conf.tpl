@@ -1,5 +1,6 @@
 server {
-    listen ${LISTEN_PORT};
+    listen ${LISTEN_PORT} default_server;
+    server_name _;
 
     # Serve static files
     location /static {
