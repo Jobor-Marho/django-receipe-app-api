@@ -1,5 +1,5 @@
 server {
-    listen ${LISTEN_PORT} default_server;
+    listen ${LISTEN_PORT} ;
     server_name _;
 
     # Serve static files
@@ -26,11 +26,6 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-
-        # WebSocket support (if needed)
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "Upgrade";
     }
 
     # Block hidden files
